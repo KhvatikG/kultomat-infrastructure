@@ -1,0 +1,52 @@
+version: '3.9'
+
+services:
+  orders-closer:
+    image: orders-closer:latest
+    build:
+      context: ../orders-closer
+    environment:
+      - TZ=Europe/Moscow
+    networks:
+      - internal
+    volumes:
+      - type: bind
+        source: ../logs/orders-closer
+        target: /app/logs
+        read_only: false
+    expose:
+      - "8000"
+    command: uvicorn main:app --host 0.0.0.0 --port 8000
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  time-controller:
+    image: time-controller:latest
+    build:
+      context: ../time-controller
+    env_file:
+      - .env
+    environment:
+      - TZ=Europe/Moscow
+      - ORDER_CLOSER_URL=http://order-closer:8000
+    depends_on:
+      orders-closer:
+        condition: service_healthy
+    networks:
+      - internal
+    volumes:
+      - - type: bind
+          source: ../logs/time-controller
+          target: /app/logs
+          read_only: false
+    command: poetry run python main.py
+    restart: unless-stopped
+
+networks:
+  internal:
+    driver: bridge
+    internal: true
