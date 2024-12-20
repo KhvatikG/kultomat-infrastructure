@@ -16,7 +16,7 @@ services:
         read_only: false
     expose:
       - "8000"
-    entrypoint: ["poetry", "run", "uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -32,7 +32,7 @@ services:
       - .env
     environment:
       - TZ=Europe/Moscow
-      - ORDER_CLOSER_URL=http://order-closer:8000
+      - ORDER_CLOSER_API_URL=http://order-closer:8000
     depends_on:
       orders-closer:
         condition: service_healthy
