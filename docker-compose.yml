@@ -39,10 +39,10 @@ services:
     networks:
       - internal
     volumes:
-      - - type: bind
-          source: ../logs/time-controller
-          target: /app/logs
-          read_only: false
+      - type: bind
+        source: ../logs/time-controller
+        target: /app/logs
+        read_only: false
     command: poetry run python main.py
     restart: unless-stopped
 
