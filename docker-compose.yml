@@ -16,7 +16,7 @@ services:
         read_only: false
     expose:
       - "8000"
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    command: poetry run uvicorn app.main:app --host 0.0.0.0 --port 8000 --workers 2
     restart: unless-stopped
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
@@ -32,7 +32,9 @@ services:
       - .env
     environment:
       - TZ=Europe/Moscow
-      - ORDER_CLOSER_API_URL=http://order-closer:8000
+      - ORDERS_CLOSER_API_URL=http://orders-closer:8000
+      - POSTGRES_HOST=postgres
+      - POSTGRES_PORT=5432
     depends_on:
       orders-closer:
         condition: service_healthy
@@ -45,6 +47,36 @@ services:
         read_only: false
     command: poetry run python main.py
     restart: unless-stopped
+
+  postgres:
+    image: postgres:17-alpine
+    env_file:
+      - .env
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d:ro
+    networks:
+      - internal
+    expose:
+      - "5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "shared_buffers=256MB"
+      - "-c"
+      - "max_connections=50"
+      - "-c"
+      - "work_mem=16MB"
+    healthcheck:
+      test: ["CMD", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
+    driver: local
 
 networks:
   internal:
