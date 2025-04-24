@@ -52,6 +52,8 @@ services:
     image: postgres:17-alpine
     env_file:
       - .env
+    environment:
+      - TZ=Europe/Moscow
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./init-scripts:/docker-entrypoint-initdb.d:ro
